@@ -128,6 +128,10 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
 GOOGLE_CLIENT_ID = '771237996206-h3ioocqrdo6ca95ffcfvifouc2l85bce.apps.googleusercontent.com'
 
+SPOTIFY_CLIENT_ID = 'a5264ffdb28c4bcf84c9fd733de67062'
+SPOTIFY_SECRET = '773cdd2a311d45c49eca10d70832e47e'
+
+
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('src.oauth.services.auth_backend.AuthBackend', ),
