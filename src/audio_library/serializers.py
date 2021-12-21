@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from . import models
 from ..base.services import delete_old_file
+from ..oauth.serializers import AuthorSerializer
 
 
 class BaseSerializer(serializers.ModelSerializer):
@@ -32,6 +33,7 @@ class AlbumSerializer(BaseSerializer):
 class CreateAuthorTrackSerializer(BaseSerializer):
     plays_count = serializers.IntegerField(read_only=True)
     download_count = serializers.IntegerField(read_only=True)
+    user = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = models.Track
@@ -46,10 +48,14 @@ class CreateAuthorTrackSerializer(BaseSerializer):
             'create_at',
             'plays_count',
             'download_count',
+            'private',
+            'cover',
+            'user'
         )
 
     def update(self, instance, validated_data):
         delete_old_file(instance.file.path)
+        delete_old_file(instance.cover.path)
         return super().update(instance, validated_data)
 
 
@@ -57,6 +63,7 @@ class AuthorTrackSerializer(CreateAuthorTrackSerializer):
     license = LicenseSerializer()
     genre = GenreSerializer(many=True)
     album = AlbumSerializer()
+    user = AuthorSerializer()
 
 
 class CreatePlayListSerializer(BaseSerializer):
@@ -71,3 +78,21 @@ class CreatePlayListSerializer(BaseSerializer):
 
 class PlayListSerializer(CreatePlayListSerializer):
     track = AuthorTrackSerializer(many=True, read_only=True)
+
+
+class CommentAuthorSerializer(serializers.ModelSerializer):
+    """Сериализация комментариев"""
+
+    class Meta:
+        model = models.Comment
+        fields = ('id', 'text', 'track')
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """Сериализация комментариев"""
+
+    user = AuthorSerializer()
+
+    class Meta:
+        model = models.Comment
+        fields = ('id', 'text', 'user', 'track', 'create_at')

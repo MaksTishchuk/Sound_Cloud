@@ -24,6 +24,13 @@ def get_path_upload_track(instance, file):
     return f'track/user_{instance.user.id}/{file}'
 
 
+def get_path_upload_cover_track(instance, file):
+    """Генерация пути к файлу обложки трека. Format: media/track/cover/user_id/photo.jpg
+    instance - объект пользователя.
+    """
+    return f'track/cover/user_{instance.user.id}/{file}'
+
+
 def get_path_upload_cover_play_list(instance, file):
     """Генерация пути к файлу обложки плейлиста. Format: media/play_list/user_id/photo.jpg
     instance - объект пользователя.
