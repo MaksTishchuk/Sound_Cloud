@@ -1,6 +1,6 @@
 import os
 
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse
 from rest_framework import generics, viewsets, parsers, views
 from rest_framework.generics import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -131,33 +131,51 @@ class AuthorTrackListView(generics.ListAPIView):
 class StreamingFileView(views.APIView):
     """Получение и проигрывание трека"""
 
-    def set_play(self, track):
-        track.plays_count += 1
-        track.save()
+    def set_play(self):
+        self.track.plays_count += 1
+        self.track.save()
 
     def get(self, request, pk):
-        track = get_object_or_404(models.Track, id=pk)
-        if os.path.exists(track.file.path):
-            self.set_play(track)
-            return FileResponse(open(track.file.path, 'rb'), filename=track.file.name)
+        self.track = get_object_or_404(models.Track, id=pk, private=False)
+        if os.path.exists(self.track.file.path):
+            self.set_play()
+            response = HttpResponse('', content_type="audio/mpeg", status=206)
+            response['X-Accel-Redirect'] = f"/mp3/{self.track.file.name}"
+            return response
         else:
-            return Http404
+            return
 
 
 class DownloadTrackView(views.APIView):
     """Скачивание трека"""
 
     def set_download(self):
-        self.track.download_count += 1
+        self.track.download += 1
         self.track.save()
 
     def get(self, request, pk):
-        self.track = get_object_or_404(models.Track, id=pk)
+        self.track = get_object_or_404(models.Track, id=pk, private=False)
         if os.path.exists(self.track.file.path):
             self.set_download()
-            return FileResponse(
-                open(self.track.file.path, 'rb'), filename=self.track.file.name, as_attachment=True
-            )
+            response = HttpResponse('', content_type="audio/mpeg", status=206)
+            response["Content-Disposition"] = f"attachment; filename={self.track.file.name}"
+            response['X-Accel-Redirect'] = f"/media/{self.track.file.name}"
+            return response
+        else:
+            return
+
+
+class StreamingFileAuthorView(views.APIView):
+    """Воспроизведение трека автора"""
+
+    permission_classes = [IsAuthor]
+
+    def get(self, request, pk):
+        self.track = get_object_or_404(models.Track, id=pk, user=request.user)
+        if os.path.exists(self.track.file.path):
+            response = HttpResponse('', content_type="audio/mpeg", status=206)
+            response['X-Accel-Redirect'] = f"/mp3/{self.track.file.name}"
+            return response
         else:
             return Http404
 
